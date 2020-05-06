@@ -1,0 +1,94 @@
+{
+  "name": "prodpad2youtrack",
+  "nodes": [
+    {
+      "parameters": {},
+      "name": "Start",
+      "type": "n8n-nodes-base.start",
+      "typeVersion": 1,
+      "position": [
+        700,
+        100
+      ]
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "pp2yt",
+        "responseMode": "lastNode",
+        "options": {
+          "rawBody": false
+        }
+      },
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [
+        700,
+        250
+      ]
+    },
+    {
+      "parameters": {
+        "functionCode": "var body = {};\nbody.summary = item.body.title;\n\nbody.description = \"\";\n\nbody.usesMarkdown = true;\n\nif (item.body.description.length) {\n    body.description = item.body.description;\n}\n\nif (item.body.functional_spec) {\n    body.description += \"<h2>Functional Specs:</h2>\\n\\n\"+item.body.functional_spec;\n}\n\nif (item.body.notes) {\n    body.description += \"<h2>Notes:</h2>\\n\\n\" + item.body.notes;    \n}\n\nif (item.body.business_case) {\n  body.description += \"<h2>Business Case</h2>\";\n  if (item.body.business_case.problem) {\n    body.description += \"<h3>Problem:</h3>\" + item.body.business_case.problem;\n  }\n  if (item.body.business_case.value) {\n    body.description += \"<h3>Value:</h3>\" + item.body.business_case.problem;\n  }  \n}\n\nbody.description += \"<h3>ProdPad:</h3><a href='\"+item.body.web_url+\"' target='_blank'>\"+item.body.web_url+\"</a>\";\n\nbody.project = {\"id\":\"0-1\"};\nbody.externalIssue = {\n    url:item.body.web_url, \n    name:item.body.title, \n    key:item.body.project_id\n};\nbody.customFields = [\n    { \"name\":\"Effort\",\"value\":parseInt(item.body.effort_scaled), $type:\"SimpleIssueCustomField\" },\n    { \"name\":\"Impact\",\"value\":parseInt(item.body.impact_scaled), $type:\"SimpleIssueCustomField\" },\n    { \"name\":\"Type\",\"value\":{\"name\": \"Task\"}, $type:\"SingleEnumIssueCustomField\" },\n];\nreturn {body:body};\n\n"
+      },
+      "name": "FunctionItem",
+      "type": "n8n-nodes-base.functionItem",
+      "typeVersion": 1,
+      "position": [
+        1010,
+        250
+      ]
+    },
+    {
+      "parameters": {
+        "authentication": "headerAuth",
+        "requestMethod": "POST",
+        "url": "https://YOURYOUTRACROOTURL/api/issues",
+        "jsonParameters": true,
+        "options": {},
+        "bodyParametersJson": "={{$node[\"FunctionItem\"].data[\"body\"]}}"
+      },
+      "name": "Youtrack OUT",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 1,
+      "position": [
+        1300,
+        250
+      ],
+      "credentials": {
+        "httpHeaderAuth": "youtrack-permanent"
+      },
+      "color": "#00DD12"
+    }
+  ],
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "FunctionItem",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "FunctionItem": {
+      "main": [
+        [
+          {
+            "node": "Youtrack OUT",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "timezone": "Europe/Berlin"
+  },
+  "id": "8"
+}
